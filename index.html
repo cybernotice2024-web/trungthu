@@ -122,7 +122,7 @@
         transition: transform 0.4s ease, box-shadow 0.4s ease;
         pointer-events: none;
         backface-visibility: hidden;
-        animation-play-state:  running;
+        animation-play-state: running;
       }
 
       .lantern img {
@@ -312,6 +312,42 @@
         opacity: 0;
         pointer-events: none;
       }
+      .overlay-content {
+        text-align: center;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        
+      }
+
+      #overlay-text {
+        font-size: 28px;
+        margin-bottom: 30px;
+        color: #a0eaff;
+        text-shadow: 0 0 8px #00f0ff;
+        font-weight: 600;
+      }
+      #letgo-btn {
+        padding: 20px 40px;
+        font-size: 24px;
+        border: none;
+        border-radius: 15px;
+        background: linear-gradient(
+          to right,
+          #4facfe,
+          #00f2fe
+        ); /* xanh gradient */
+        color: white;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      #letgo-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+      }
       .countdown {
         font-size: 100px;
         color: white;
@@ -357,7 +393,11 @@
   </head>
   <body>
     <div class="overlay" id="overlay">
-      <div class="countdown" id="countdown">3</div>
+      <div class="overlay-content">
+        <p id="overlay-text">Thanh zy bấm vào đây nè 🎐</p>
+        <button id="letgo-btn">Let Go!</button>
+        <div class="countdown" id="countdown" style="display: none">3</div>
+      </div>
     </div>
 
     <div class="scene">
@@ -399,7 +439,7 @@
       const hitCtx = hitCanvas.getContext("2d");
 
       // stars
-      for (let i = 0; i < (window.innerWidth < 480 ? 50 : 100); i++) {
+      for (let i = 0; i < (window.innerWidth < 480 ? 25 : 100); i++) {
         const star = document.createElement("div");
         star.className = "star";
         const size = Math.random() * 2 + 1;
@@ -431,7 +471,7 @@
       ];
 
       const isMobile = window.innerWidth <= 480;
-      const lanternCount = isMobile ? 70 : 100;
+      const lanternCount = isMobile ? 35 : 100;
       const baseRadius = isMobile ? 400 : 800;
       const maxRadius = isMobile ? 600 : 1600;
 
@@ -474,7 +514,7 @@
             messages[Math.floor(Math.random() * messages.length)];
 
           // hanger (30%)
-          if (Math.random() < 0.3) {
+          if (Math.random() < (isMobile ? 0.15 : 0.3)) {
             const hanger = document.createElement("div");
             hanger.className = "hanger";
 
@@ -609,65 +649,76 @@
 
       // mở màn đếm ngược
       const overlay = document.getElementById("overlay");
+      const letGoBtn = document.getElementById("letgo-btn");
+      const overlayText = document.getElementById("overlay-text");
       const countdown = document.getElementById("countdown");
       const bgMusic = document.getElementById("bg-music");
 
-      let counter = 3;
-      const timer = setInterval(() => {
-        counter--;
-        if (counter > 0) {
-          countdown.textContent = counter;
-          countdown.style.animation = "none";
-          countdown.offsetHeight; // trigger reflow để reset animation
-          countdown.style.animation = null;
-        } else {
-          clearInterval(timer);
-          overlay.classList.add("hidden");
-          document.querySelector(".scene").classList.add("start");
+      letGoBtn.addEventListener("click", () => {
+        // Ẩn nút Let Go
+        letGoBtn.style.display = "none";
+        overlayText.style.display = "none";
+        // Hiện countdown
+        countdown.style.display = "block";
 
-          // 🎵 Phát nhạc
-          bgMusic
-            .play()
-            .then(() => {
-              // 🏮 Cho tất cả lồng đèn bắt đầu bay
-              document.querySelectorAll(".lantern").forEach((lantern) => {
-                lantern.style.animationPlayState = "running";
-                lantern.addEventListener("animationend", () => {
-                  lantern.style.opacity = 0;
-                  lantern.style.animationPlayState = "paused";
-                  if (lantern.parentElement) lantern.parentElement.remove();
+        // Bắt đầu đếm ngược
+        let counter = 3;
+        countdown.textContent = counter;
+        const timer = setInterval(() => {
+          counter--;
+          if (counter > 0) {
+            countdown.textContent = counter;
+            countdown.style.animation = "none";
+            countdown.offsetHeight; // trigger reflow để reset animation
+            countdown.style.animation = null;
+          } else {
+            clearInterval(timer);
+            overlay.classList.add("hidden");
+            document.querySelector(".scene").classList.add("start");
+
+            // 🎵 Phát nhạc
+            bgMusic
+              .play()
+              .then(() => {
+                // 🏮 Cho tất cả lồng đèn bắt đầu bay
+                document.querySelectorAll(".lantern").forEach((lantern) => {
+                  lantern.style.animationPlayState = "running";
+                  lantern.addEventListener("animationend", () => {
+                    lantern.style.opacity = 0;
+                    lantern.style.animationPlayState = "paused";
+                    if (lantern.parentElement) lantern.parentElement.remove();
+                  });
                 });
-              });
 
-              // Kết thúc sự kiện sau 80 giây (1 phút 20 giây)
-              setTimeout(() => {
-                const endOverlay = document.createElement("div");
-                endOverlay.style.position = "fixed";
-                endOverlay.style.inset = 0;
-                endOverlay.style.background = "rgba(0, 0, 0, 0.9)";
-                endOverlay.style.display = "flex";
-                endOverlay.style.flexDirection = "column";
-                endOverlay.style.justifyContent = "center";
-                endOverlay.style.alignItems = "center";
-                endOverlay.style.color = "white";
-                endOverlay.style.fontSize = "32px";
-                endOverlay.style.zIndex = 30000;
-                endOverlay.innerHTML = `
-    <div>🎐 Hết rồi nè 🎉</div>
-    <div>Vô game nhận qua nha</div>
-    <img src="./Thêm tiêu đề phụ.png" alt="Cảm ơn" style="width: 120px; margin-top: 15px;">
-  `;
-                document.body.appendChild(endOverlay);
+                // Kết thúc sự kiện sau 80 giây (1 phút 20 giây)
+                setTimeout(() => {
+                  const endOverlay = document.createElement("div");
+                  endOverlay.style.position = "fixed";
+                  endOverlay.style.inset = 0;
+                  endOverlay.style.background = "rgba(0, 0, 0, 0.9)";
+                  endOverlay.style.display = "flex";
+                  endOverlay.style.flexDirection = "column";
+                  endOverlay.style.justifyContent = "center";
+                  endOverlay.style.alignItems = "center";
+                  endOverlay.style.color = "white";
+                  endOverlay.style.fontSize = "32px";
+                  endOverlay.style.zIndex = 30000;
+                  endOverlay.innerHTML = `
+              <div>🎐 Hết rồi nè 🎉</div>
+              <div>Vô Liên Quân nhận qua nha</div>
+            `;
+                  document.body.appendChild(endOverlay);
 
-                // Xóa toàn bộ lồng đèn còn lại
-                document
-                  .querySelectorAll(".lantern-wrapper")
-                  .forEach((el) => el.remove());
-              }, 80 * 1000);
-            })
-            .catch(() => {});
-        }
-      }, 1000);
+                  // Xóa toàn bộ lồng đèn còn lại
+                  document
+                    .querySelectorAll(".lantern-wrapper")
+                    .forEach((el) => el.remove());
+                }, 80 * 1000);
+              })
+              .catch(() => {});
+          }
+        }, 1000);
+      });
     </script>
   </body>
 </html>
